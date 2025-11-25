@@ -238,7 +238,7 @@
 如有问题或建议，请通过以下方式联系：
 - 项目负责人：HR部门
 - 技术支持：IT部门
-- 反馈邮箱：hr-support@kingsoft.com
+- 反馈邮箱：hr-support@xxx.com
 
 ---
 

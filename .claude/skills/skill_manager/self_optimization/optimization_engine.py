@@ -16,8 +16,7 @@ from dataclasses import dataclass, field
 # 添加路径
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from models import SkillSpec, OperationRecord
-from core.skill_creator import SkillCreator
+from models import OperationRecord
 
 
 @dataclass
@@ -320,8 +319,7 @@ class SkillOptimizationEngine:
         self.config = config or {}
         self.tracker = SkillPerformanceTracker()
         self.deviation_detector = SkillDeviationDetector(config)
-        self.skill_creator = SkillCreator()
-        
+
         # 优化策略配置
         self.optimization_strategies = {
             'parameter': self._optimize_parameters,
@@ -442,9 +440,73 @@ class SkillOptimizationEngine:
     
     def _optimize_parameters(self, skill_name: str, metrics: SkillPerformanceMetrics) -> bool:
         """优化参数"""
-        # 这里可以实现具体的参数优化逻辑
         print(f"优化Skill参数: {skill_name}")
-        return True
+
+        try:
+            # 查找Skill路径
+            skill_path = Path('.claude/skills') / skill_name
+            if not skill_path.exists():
+                print(f"Skill路径不存在: {skill_path}")
+                return False
+
+            # 读取SKILL.md
+            skill_md_path = skill_path / 'SKILL.md'
+            if not skill_md_path.exists():
+                print(f"SKILL.md不存在")
+                return False
+
+            with open(skill_md_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+
+            changes_made = False
+
+            # 基于错误率优化超时参数
+            if metrics.error_rate > 0.1:
+                print(f"  - 错误率过高({metrics.error_rate:.1%})，调整超时和重试参数")
+
+                # 检查是否有超时配置
+                if 'timeout' in content.lower() or 'retry' in content.lower():
+                    # 增加超时时间建议
+                    timeout_suggestion = "\n### 参数优化建议\n\n基于性能分析，建议调整以下参数:\n- `timeout`: 建议增加至 60 秒\n- `max_retries`: 建议设置为 3 次\n- `retry_delay`: 建议设置为 2 秒\n"
+
+                    if '## 📋 输入规范' in content and '### 参数优化建议' not in content:
+                        content = content.replace('## 📋 输入规范', timeout_suggestion + '\n## 📋 输入规范')
+                        changes_made = True
+
+            # 基于性能优化批处理参数
+            if metrics.avg_duration > 10:
+                print(f"  - 平均执行时间过长({metrics.avg_duration:.2f}秒)，建议启用批处理")
+
+                batch_suggestion = "\n### 性能优化建议\n\n- 启用批处理模式以提升性能\n- `batch_size`: 建议设置为 100\n- `parallel_workers`: 建议设置为 4\n"
+
+                if '## 🔧 高级功能' not in content and changes_made is False:
+                    content += f"\n{batch_suggestion}\n"
+                    changes_made = True
+
+            # 基于用户反馈优化默认参数
+            if metrics.user_satisfaction < 3.5 and metrics.satisfaction_count > 5:
+                print(f"  - 用户满意度较低({metrics.user_satisfaction:.1f})，优化默认参数")
+
+                # 添加用户友好的默认值建议
+                default_suggestion = "\n### 默认参数优化\n\n基于用户反馈优化:\n- 增加输出详细度\n- 提供更友好的错误提示\n- 添加进度显示\n"
+
+                if changes_made is False:
+                    content += f"\n{default_suggestion}\n"
+                    changes_made = True
+
+            # 保存更新
+            if changes_made:
+                with open(skill_md_path, 'w', encoding='utf-8') as f:
+                    f.write(content)
+                print(f"  ✅ 参数优化建议已添加到文档")
+                return True
+            else:
+                print(f"  ℹ️  当前参数配置良好，无需优化")
+                return True
+
+        except Exception as e:
+            print(f"参数优化失败: {e}")
+            return False
     
     def _optimize_template(self, skill_name: str, metrics: SkillPerformanceMetrics) -> bool:
         """优化模板"""
@@ -459,7 +521,181 @@ class SkillOptimizationEngine:
     def _enhance_functionality(self, skill_name: str, metrics: SkillPerformanceMetrics) -> bool:
         """增强功能"""
         print(f"增强Skill功能: {skill_name}")
-        return True
+
+        try:
+            # 查找Skill路径
+            skill_path = Path('.claude/skills') / skill_name
+            if not skill_path.exists():
+                print(f"Skill路径不存在: {skill_path}")
+                return False
+
+            enhancements = []
+
+            # 基于采用率低，建议增加功能
+            if metrics.user_adoption_rate < 0.3:
+                print(f"  - 采用率较低({metrics.user_adoption_rate:.1%})，分析缺失功能")
+
+                enhancements.append({
+                    'type': 'feature',
+                    'priority': 'high',
+                    'title': '增加用户需求的功能',
+                    'suggestions': [
+                        '调研用户实际需求',
+                        '增加常用功能快捷方式',
+                        '提供更多输出格式选项',
+                        '增加批处理模式支持'
+                    ]
+                })
+
+            # 基于错误率，增加健壮性功能
+            if metrics.error_rate > 0.1:
+                print(f"  - 错误率过高({metrics.error_rate:.1%})，增强健壮性")
+
+                enhancements.append({
+                    'type': 'robustness',
+                    'priority': 'high',
+                    'title': '增强错误处理和恢复能力',
+                    'suggestions': [
+                        '添加输入验证机制',
+                        '实现自动重试逻辑',
+                        '增加错误恢复策略',
+                        '提供详细的错误诊断信息',
+                        '添加降级处理方案'
+                    ]
+                })
+
+            # 基于用户满意度，增加用户体验功能
+            if metrics.user_satisfaction < 3.5 and metrics.satisfaction_count > 5:
+                print(f"  - 用户满意度较低({metrics.user_satisfaction:.1f})，改善用户体验")
+
+                enhancements.append({
+                    'type': 'ux',
+                    'priority': 'medium',
+                    'title': '改善用户体验',
+                    'suggestions': [
+                        '添加进度条和状态提示',
+                        '优化输出格式的可读性',
+                        '提供交互式配置向导',
+                        '增加使用提示和帮助信息',
+                        '简化常用操作流程'
+                    ]
+                })
+
+            # 基于性能，增加优化功能
+            if metrics.avg_duration > 10:
+                print(f"  - 平均执行时间过长({metrics.avg_duration:.2f}秒)，增加性能优化功能")
+
+                enhancements.append({
+                    'type': 'performance',
+                    'priority': 'high',
+                    'title': '性能优化增强',
+                    'suggestions': [
+                        '实现增量处理模式',
+                        '添加缓存机制',
+                        '支持并行处理',
+                        '优化资源使用',
+                        '实现懒加载策略'
+                    ]
+                })
+
+            # 写入增强建议文档
+            if enhancements:
+                enhancement_doc_path = skill_path / 'ENHANCEMENT_RECOMMENDATIONS.md'
+
+                enhancement_content = f"""# {skill_name} 功能增强建议
+
+> 基于性能分析自动生成 - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+## 📊 当前性能指标
+
+- 健康度评分: {metrics.health_score:.1f}/100
+- 用户满意度: {metrics.user_satisfaction:.1f}/5.0
+- 采用率: {metrics.user_adoption_rate:.1%}
+- 错误率: {metrics.error_rate:.1%}
+- 平均执行时间: {metrics.avg_duration:.2f}秒
+
+## 🚀 增强建议
+
+"""
+
+                for idx, enhancement in enumerate(enhancements, 1):
+                    enhancement_content += f"""
+### {idx}. {enhancement['title']} ({enhancement['type'].upper()})
+
+**优先级**: {enhancement['priority'].upper()}
+
+**具体建议**:
+"""
+                    for suggestion in enhancement['suggestions']:
+                        enhancement_content += f"- {suggestion}\n"
+
+                    enhancement_content += "\n"
+
+                enhancement_content += """
+## 📋 实施计划
+
+1. **评估阶段** (1-2天)
+   - 与用户沟通确认需求
+   - 评估实施成本和收益
+   - 确定优先级
+
+2. **设计阶段** (2-3天)
+   - 设计增强方案
+   - 评审技术可行性
+   - 准备测试计划
+
+3. **实施阶段** (5-10天)
+   - 按优先级实施增强
+   - 编写单元测试
+   - 更新文档
+
+4. **验证阶段** (2-3天)
+   - 功能测试
+   - 性能测试
+   - 用户验收测试
+
+## ⚠️ 注意事项
+
+- 所有增强需要经过充分测试
+- 保持向后兼容性
+- 及时更新文档和示例
+- 收集用户反馈并迭代
+"""
+
+                try:
+                    with open(enhancement_doc_path, 'w', encoding='utf-8') as f:
+                        f.write(enhancement_content)
+                    print(f"  ✅ 功能增强建议已保存到: {enhancement_doc_path}")
+
+                    # 同时在SKILL.md中添加引用
+                    skill_md_path = skill_path / 'SKILL.md'
+                    if skill_md_path.exists():
+                        with open(skill_md_path, 'r', encoding='utf-8') as f:
+                            skill_content = f.read()
+
+                        if 'ENHANCEMENT_RECOMMENDATIONS.md' not in skill_content:
+                            enhancement_link = f"\n\n> 💡 **功能增强建议**: 查看 [ENHANCEMENT_RECOMMENDATIONS.md](./ENHANCEMENT_RECOMMENDATIONS.md) 了解基于性能分析的改进建议\n"
+
+                            # 在文档末尾添加链接
+                            skill_content += enhancement_link
+
+                            with open(skill_md_path, 'w', encoding='utf-8') as f:
+                                f.write(skill_content)
+                            print(f"  ✅ 已在SKILL.md中添加增强建议链接")
+
+                    return True
+
+                except Exception as e:
+                    print(f"保存增强建议失败: {e}")
+                    return False
+
+            else:
+                print(f"  ℹ️  当前功能满足需求，无需增强")
+                return True
+
+        except Exception as e:
+            print(f"功能增强失败: {e}")
+            return False
     
     def apply_optimization(self, recommendation: OptimizationRecommendation) -> bool:
         """应用优化"""

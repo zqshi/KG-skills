@@ -2,9 +2,10 @@
 
 ## 📖 项目概述
 
-这是一个基于Claude Skills构建的企业级知识管理系统。系统通过21个专业化的AI技能，实现从知识采集、处理、管理到检索、分析的全生命周期管理。                                          
-**项目状态**: ✅ 21个Skills结构完整，覆盖知识管理全生命周期
-**最新评估**: 2025-11-27（详见[项目评估报告](.claude/skills/PROJECT_ASSESSMENT_REPORT.md)）                                             
+这是一个基于Claude Skills构建的企业级知识管理系统。系统通过19个专业化的AI技能，实现从知识采集、处理、管理到检索、分析的全生命周期管理。
+
+**项目状态**: ✅ 19个Skills结构完整，覆盖知识管理全生命周期
+**最后更新**: 2025-11-28                                             
 
 ## 🎯 系统架构
 
@@ -20,15 +21,15 @@
 
 ### 1. 知识库管理员 Agent
 **职责**: 知识库的建设、维护、质量控制、版本管理和持续优化
-**具备Skills**: 19个（知识采集、创建、验证、版本管理、内容生成、分析洞察）                                                              
-**详细定义**: [agents/hr_knowledge_administrator.md](agents/hr_knowledge_administrator.md)                                              
+**具备Skills**: 18个（知识采集、创建、验证、版本管理、内容生成、分析洞察、Skill管理）
+**详细定义**: [agents/hr_knowledge_administrator.md](agents/hr_knowledge_administrator.md)
 
 ### 2. 知识库客服 Agent
 **职责**: 理解员工咨询、检索知识、组织答案、收集反馈
 **具备Skills**: 4个（知识检索、摘要生成、质量验证、使用分析）
 **详细定义**: [agents/hr_knowledge_customer_service.md](agents/hr_knowledge_customer_service.md)                                        
 
-## 🛠️ Skills 分类（共21个）
+## 🛠️ Skills 分类（共19个）
 
 ### 1. 知识采集与处理（5个）
 | Skill名称 | 功能描述 | 质量指标 | 状态 |
@@ -75,25 +76,21 @@
 |-----------|----------|----------|------|
 | [`analyze_knowledge_usage`](.claude/skills/analyze_knowledge_usage/SKILL.md) | 收集知识库使用数据，分析搜索模式和用户行为，识别热门与冷门知识 | 分析准确率≥90% | ✅ |
 
-### 8. 工具与框架（3个）
+### 8. 工具与框架（1个）
 | Skill名称 | 功能描述 | 状态 |
 |-----------|----------|------|
-| [`skill_factory`](.claude/skills/skill_factory/SKILL.md) | 基于模板快速生成标准化Skill框架 | ✅ |
-| [`skill_manager`](.claude/skills/skill_manager/SKILL.md) | Skill管理工具，支持创建、验证、部署、报告生成 | ✅ |
-| [`update_knowledge_content`](.claude/skills/update_knowledge_content/SKILL.md) | 更新知识内容（文档缺失） | ⚠️ |
-
-**注**: [`update_knowledge_content`](.claude/skills/update_knowledge_content/SKILL.md) 和 [`extract_knowledge_points`](.claude/skills/extract_knowledge_points/SKILL.md) 目录存在但SKILL.md缺失
+| [`skill_manager`](.claude/skills/skill_manager/SKILL.md) | 统一的Skill管理系统，支持手动创建、自动分析、模板管理、工作流发现 | ✅ |
 
 ## 🚀 快速开始
 
 ### 环境准备
-```
+```bash
 # 安装依赖
-pip install PyYAML
+pip install pyyaml schedule requests
 
 # 验证安装
-cd .claude/skills
-python3 scripts/skill_manager.py --help
+cd .claude/skills/skill_manager
+python3 main.py --help
 ```
 
 ### 场景1：回答员工问题（客服Agent）
@@ -143,20 +140,22 @@ python3 scripts/skill_manager.py --help
 
 ### 场景5：管理Skill项目
 ```bash
-# 列出所有Skills
-python3 scripts/skill_manager.py list
+# 交互式创建新Skill
+cd .claude/skills/skill_manager
+python3 main.py create --interactive
 
-# 创建新Skill（基于模板）
-python3 scripts/skill_manager.py create my_new_skill \
-  --template knowledge_processor \
+# 命令行创建新Skill
+python3 main.py create \
+  --name employee_feedback_processor \
   --description "处理员工反馈数据" \
-  --display-name "员工反馈处理器"
+  --type data_processor \
+  --complexity medium
 
-# 验证Skill
-python3 scripts/skill_manager.py validate my_new_skill
+# 自动分析工作流并推荐Skill
+python3 main.py analyze --log-file operations.json
 
-# 生成项目报告
-python3 scripts/skill_manager.py report --output report.json
+# 启动周期性分析调度器
+python3 main.py scheduler start
 ```
 
 ## 📊 质量保障体系
@@ -173,11 +172,8 @@ python3 scripts/skill_manager.py report --output report.json
 3. **持续优化**: 基于使用数据的持续改进
 
 ### 自动化工具
-- **skill_validator.py**: Skill结构验证、YAML头部验证、Markdown结构验证
-- **skill_manager.py**: Skill生命周期管理、报告生成
+- **skill_manager**: 统一的Skill管理系统，支持手动创建、自动分析、模板管理、工作流发现
 - **统一工具库**: validation_rules.py、file_helpers.py、logging_utils.py
-
-详细质量报告见：[项目评估报告](.claude/skills/PROJECT_ASSESSMENT_REPORT.md)
 
 ## 🔧 技术架构
 
@@ -210,46 +206,39 @@ python3 scripts/skill_manager.py report --output report.json
 
 ```
 .
-├── .claude/skills/                    # Skills核心目录（21个Skills）
-│   ├── analyze_knowledge_usage/
-│   ├── build_knowledge_graph/
-│   ├── collect_knowledge_sources/
-│   ├── create_knowledge_entry/
-│   ├── enrich_knowledge_context/
-│   ├── extract_content_tags/
-│   ├── generalize_faq_questions/
-│   ├── generate_faq_from_content/
-│   ├── generate_knowledge_summary/
-│   ├── maintain_version_relationships/
-│   ├── manage_document_version_change/
-│   ├── normalize_knowledge_format/
-│   ├── retire_obsolete_knowledge/
-│   ├── search_knowledge_base/
-│   ├── segment_knowledge_content/
-│   ├── skill_factory/
-│   ├── skill_manager/
-│   ├── validate_faq_quality/
-│   ├── validate_knowledge_quality/
-│   ├── validate_summary_quality/
-│   ├── update_knowledge_content/      # ⚠️ SKILL.md缺失
-│   ├── extract_knowledge_points/      # ⚠️ SKILL.md缺失
-│   ├── scripts/                       # 管理脚本
-│   │   ├── skill_validator.py         # Skill验证工具
-│   │   └── skill_manager.py           # Skill管理工具
-│   ├── utils/                         # 统一工具库
-│   │   ├── validation_rules.py        # 验证规则（244行）
-│   │   ├── file_helpers.py            # 文件操作（244行）
-│   │   └── logging_utils.py           # 日志工具（244行）
-│   └── templates/                     # 标准模板（4个）
-│       ├── knowledge_processor/
-│       ├── api_integrator/
-│       ├── data_analyzer/
-│       └── content_analyzer/
+├── .claude/skills/                    # Skills核心目录（19个Skills）
+│   ├── analyze_knowledge_usage/       # 知识使用分析
+│   ├── build_knowledge_graph/         # 知识图谱构建
+│   ├── collect_knowledge_sources/     # 知识源采集
+│   ├── create_knowledge_entry/        # 知识条目创建
+│   ├── enrich_knowledge_context/      # 知识上下文丰富
+│   ├── extract_content_tags/          # 内容标签提取
+│   ├── generalize_faq_questions/      # FAQ问题泛化
+│   ├── generate_faq_from_content/     # FAQ生成
+│   ├── generate_knowledge_summary/    # 知识摘要生成
+│   ├── maintain_version_relationships/# 版本关系维护
+│   ├── manage_document_version_change/# 文档版本变更管理
+│   ├── normalize_knowledge_format/    # 知识格式标准化
+│   ├── retire_obsolete_knowledge/     # 过时知识退役
+│   ├── search_knowledge_base/         # 知识库搜索
+│   ├── segment_knowledge_content/     # 知识内容分割
+│   ├── validate_faq_quality/          # FAQ质量验证
+│   ├── validate_knowledge_quality/    # 知识质量验证
+│   ├── validate_summary_quality/      # 摘要质量验证
+│   └── skill_manager/                 # Skill管理系统
+│       ├── SKILL.md                   # Skill定义
+│       ├── README.md                  # 使用说明
+│       ├── main.py                    # 统一入口
+│       ├── core/                      # 核心模块
+│       ├── cli/                       # 命令行界面
+│       ├── plugins/                   # 插件系统
+│       ├── templates/                 # Skill模板库
+│       ├── utils/                     # 工具库
+│       └── config/                    # 配置文件
 ├── agents/                            # AI Agent定义
 │   ├── hr_knowledge_administrator.md  # 知识库管理员
 │   └── hr_knowledge_customer_service.md  # 知识库客服
 ├── TaxKB API.md                       # REST API完整文档
-├── PROJECT_ASSESSMENT_REPORT.md       # 项目评估报告
 └── README.md                          # 本文档
 ```
 
@@ -379,30 +368,36 @@ python3 scripts/skill_manager.py report --output report.json
 ## 🤝 贡献指南
 
 ### Skill开发规范
-1. 遵循[DESIGN_PRINCIPLES.md](.claude/skills/DESIGN_PRINCIPLES.md)设计规范                                                             
-2. 保持Skill的独立性和简洁性
-3. 定义明确的质量指标
-4. 提供完整的使用示例
-5. 编写清晰的文档说明
-6. 使用统一工具库（utils）避免重复代码
+1. 保持Skill的独立性和简洁性
+2. 定义明确的质量指标
+3. 提供完整的使用示例
+4. 编写清晰的文档说明
+5. 使用统一工具库（utils）避免重复代码
+6. 遵循Claude Skills最佳实践
 
 ### 开发流程
-```
-# 1. 创建新Skill（推荐基于模板）
-python3 scripts/skill_manager.py create my_skill \
-  --template knowledge_processor \
-  --description "我的新Skill"
+```bash
+# 1. 创建新Skill（推荐使用交互式）
+cd .claude/skills/skill_manager
+python3 main.py create --interactive
+
+# 或使用命令行参数
+python3 main.py create \
+  --name my_skill \
+  --description "我的新Skill" \
+  --type knowledge_processor \
+  --complexity medium
 
 # 2. 开发Skill逻辑
-# 编辑 my_skill/SKILL.md
-# 在 my_skill/scripts/ 中添加处理脚本
-# 在 my_skill/examples/ 中创建示例
+# 编辑 .claude/skills/my_skill/SKILL.md
+# 在 .claude/skills/my_skill/scripts/ 中添加处理脚本
+# 在 .claude/skills/my_skill/examples/ 中创建示例
 
 # 3. 验证Skill
-python3 scripts/skill_validator.py my_skill
+python3 main.py validate my_skill
 
-# 4. 测试和部署
-python3 scripts/skill_manager.py deploy my_skill
+# 4. 测试Skill功能
+# 通过Claude Code直接调用测试
 ```
 
 ### 代码审查要点
@@ -420,13 +415,13 @@ python3 scripts/skill_manager.py deploy my_skill
 - 反馈邮箱：hr-support@xxx.com
 
 ### 相关资源
-- [项目评估报告](.claude/skills/PROJECT_ASSESSMENT_REPORT.md) - 完整项目状态和改进建议                                                 
 - [TaxKB API文档](TaxKB API.md) - REST API完整使用指南
 - [Agent角色定义](agents/) - AI Agent详细职责和工作流程
+- [Skill Manager文档](.claude/skills/skill_manager/README.md) - Skill管理系统使用指南
 
 ---
 
-**知识管理系统** - 智能化、高质量、可信赖的企业知识管理解决方案！ 🚀                                                   
-**版本**: 2.0.0
-**最后更新**: 2025-11-27
+**知识管理系统** - 智能化、高质量、可信赖的企业知识管理解决方案！ 🚀
+**版本**: 2.1.0
+**最后更新**: 2025-11-28
 **维护者**: HRSSC知识管理团队

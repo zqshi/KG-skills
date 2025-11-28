@@ -1,0 +1,129 @@
+---
+# Skill自优化配置
+# 该配置文件控制Skill的自运营和自优化行为
+
+self_optimization:
+  # 总开关
+  enabled: true
+  
+  # 调度配置
+  schedules:
+    # 日常健康检查
+    daily:
+      enabled: true
+      execution_time: "01:00"  # 每天凌晨1点执行
+      tasks:
+        - health_check          # 健康度检查
+        - metrics_collection    # 指标收集
+        - alert_check          # 告警检查
+    
+    # 周度性能分析
+    weekly:
+      enabled: true
+      day_of_week: 0          # 0=周一, 1=周二, ..., 6=周日
+      execution_time: "02:00"  # 每周一凌晨2点执行
+      tasks:
+        - performance_analysis  # 性能分析
+        - trend_analysis       # 趋势分析
+        - recommendation_generation  # 生成优化建议
+    
+    # 月度深度优化
+    monthly:
+      enabled: true
+      day_of_month: 1         # 每月1号
+      execution_time: "03:00"  # 凌晨3点执行
+      tasks:
+        - deep_optimization    # 深度优化
+        - template_update      # 模板更新
+        - documentation_review # 文档审查
+        - data_cleanup         # 数据清理
+  
+  # 优化配置
+  optimization:
+    # 自动应用优化
+    auto_apply: false         # 是否自动应用优化（建议false，人工确认）
+    require_confirmation: true # 是否需要人工确认
+    min_health_score: 60      # 最低健康度分数（低于此值触发优化）
+    min_confidence: 0.7       # 最小置信度（低于此值不自动优化）
+    max_optimizations_per_run: 5  # 每次运行最大优化数量
+    
+    # 优化策略权重
+    strategy_weights:
+      parameter: 0.3          # 参数优化
+      template: 0.2           # 模板优化
+      documentation: 0.3      # 文档优化
+      enhancement: 0.2        # 功能增强
+  
+  # 监控配置
+  monitoring:
+    # 数据保留
+    log_retention_days: 90    # 日志保留天数
+    metrics_history_days: 365 # 指标历史保留天数
+    
+    # 告警阈值
+    alert_thresholds:
+      health_score_drop: 10   # 健康度下降超过10分告警
+      error_rate_spike: 0.05  # 错误率上升超过5%告警
+      satisfaction_drop: 0.5  # 满意度下降超过0.5告警
+      adoption_rate_drop: 0.1 # 采用率下降超过10%告警
+    
+    # 性能阈值
+    performance_thresholds:
+      max_avg_duration: 30    # 最大平均执行时间（秒）
+      max_error_rate: 0.1     # 最大错误率
+      min_success_rate: 0.9   # 最小成功率
+      min_satisfaction: 3.5   # 最小用户满意度
+  
+  # 评估指标权重
+  evaluation_weights:
+    success_rate: 0.4         # 成功率权重
+    user_satisfaction: 0.3    # 用户满意度权重
+    adoption_rate: 0.2        # 采用率权重
+    performance: 0.1          # 性能权重
+
+# 工作流分析配置（复用现有配置）
+workflow_analysis:
+  enabled: true
+  interval_days: 7          # 每周执行一次
+  execution_time: "02:30"   # 每周一凌晨2:30
+  
+  analysis:
+    cycle_days: 30          # 分析周期（天）
+    frequency_threshold: 5  # 频率阈值
+    min_sequence_length: 3  # 最小序列长度
+    similarity_threshold: 0.8  # 相似度阈值
+  
+  skill_generation:
+    auto_create: false      # 是否自动创建工作流Skill
+    require_confirmation: true
+    min_confidence: 0.6     # 最小置信度
+    default_skill_type: "workflow"
+  
+  monitoring:
+    log_retention_days: 90
+    ignore_patterns:
+      - "^cd\\s+"
+      - "^ls\\s+"
+      - "^pwd$"
+      - "^echo\\s+"
+      - "^cat\\s+"
+      - "^vim?"
+      - "^nano\\s+"
+      - "^git\\s+status"
+
+# 日志配置
+logging:
+  level: "INFO"             # 日志级别: DEBUG, INFO, WARNING, ERROR
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file_rotation:
+    enabled: true
+    max_bytes: 10485760     # 10MB
+    backup_count: 5
+
+# 数据存储配置
+storage:
+  metrics_dir: "data/metrics"      # 指标数据目录
+  logs_dir: "data/logs"            # 日志目录
+  reports_dir: "data/reports"      # 报告目录
+  alerts_dir: "data/alerts"        # 告警目录
+  backup_dir: "data/backups"       # 备份目录

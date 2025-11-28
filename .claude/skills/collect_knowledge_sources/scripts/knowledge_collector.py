@@ -21,12 +21,20 @@ import signal
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Union, Tuple
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 from enum import Enum
 import requests
 from urllib.parse import urlparse
 from urllib3.util.retry import Retry
 from requests.adapters import HTTPAdapter
+
+# 尝试导入PyPDF2，如果不可用则设置标志
+try:
+    import PyPDF2
+    PDF_AVAILABLE = True
+except ImportError:
+    PDF_AVAILABLE = False
+    logging.warning("PyPDF2库未安装，PDF处理将使用降级模式")
 
 # 生产级日志配置
 class JsonFormatter(logging.Formatter):
@@ -159,8 +167,6 @@ class KnowledgeCollector:
                 - cache_ttl_seconds: 缓存过期时间
         """
         self.config = config or {}
-        self.session = self._setup_session()
-        self.circuit_breaker = self._setup_circuit_breaker()
         self.metrics = CollectionMetrics()
         self.cache = {}  # 简单的内存缓存
         
@@ -170,6 +176,10 @@ class KnowledgeCollector:
         self.max_concurrent = self.config.get('max_concurrent', 5)
         self.enable_cache = self.config.get('enable_cache', False)
         self.cache_ttl = self.config.get('cache_ttl_seconds', 3600)
+        
+        # 设置会话和断路器（需要在配置参数之后）
+        self.session = self._setup_session()
+        self.circuit_breaker = self._setup_circuit_breaker()
         
         logger.info(f"知识采集器初始化完成，配置: {json.dumps({
             'timeout': self.timeout,
@@ -311,8 +321,8 @@ class KnowledgeCollector:
         collected_results = self._collect_from_sources(valid_sources, collection_config)
         
         # 更新指标
-        successful_count = len([r for r in collected_results if r.status == 'success'])
-        failed_count = len([r for r in collected_results if r.status == 'failed'])
+        successful_count = len([r for r in collected_results if r.get('status') == 'success'])
+        failed_count = len([r for r in collected_results if r.get('status') == 'failed'])
         
         self.metrics.total_sources = len(source_urls)
         self.metrics.successful_sources = successful_count
@@ -326,7 +336,7 @@ class KnowledgeCollector:
         quality_report = self._check_quality(collected_results, quality_requirements)
         
         # 准备结果
-        successful_content = [r.content for r in collected_results if r.status == 'success' and r.content]
+        successful_content = [r.get('content') for r in collected_results if r.get('status') == 'success' and r.get('content')]
         
         result = {
             'collected_content': successful_content,
@@ -338,7 +348,7 @@ class KnowledgeCollector:
             },
             'quality_report': quality_report,
             'metrics': asdict(self.metrics),
-            'errors': [r.error for r in collected_results if r.error]
+            'errors': [r.get('error') for r in collected_results if r.get('error')]
         }
         
         # 记录完成信息
@@ -631,7 +641,7 @@ class KnowledgeCollector:
         
     def _collect_pdf_content(self, file_path: str, collection_config: Dict[str, Any]) -> Dict[str, Any]:
         """
-        采集PDF内容
+        采集PDF内容 - 使用PyPDF2提取真实文本
         
         Args:
             file_path: PDF文件路径
@@ -640,19 +650,86 @@ class KnowledgeCollector:
         Returns:
             PDF内容
         """
-        # 这里简化处理，实际项目中可使用PyPDF2或pdfminer等库
-        with open(file_path, 'rb') as f:
-            content = f.read()
-            
-        return {
-            'title': Path(file_path).stem,
-            'content': f"[PDF内容: {len(content)} bytes]",
-            'metadata': {
-                'content_length': len(content),
-                'file_size': len(content),
-                'file_path': file_path
+        if not PDF_AVAILABLE:
+            # 如果PyPDF2不可用，使用简化处理
+            logging.warning("PyPDF2库未安装，使用简化PDF处理")
+            with open(file_path, 'rb') as f:
+                content = f.read()
+            return {
+                'title': Path(file_path).stem,
+                'content': f"[PDF内容: {len(content)} bytes]",
+                'metadata': {
+                    'content_length': len(content),
+                    'file_size': len(content),
+                    'file_path': file_path,
+                    'extraction_method': 'binary_fallback'
+                }
             }
-        }
+        
+        try:
+            # 使用PyPDF2提取PDF文本内容
+            with open(file_path, 'rb') as f:
+                pdf_reader = PyPDF2.PdfReader(f)
+                
+                # 获取PDF基本信息
+                num_pages = len(pdf_reader.pages)
+                metadata = pdf_reader.metadata if hasattr(pdf_reader, 'metadata') else {}
+                
+                # 提取文本内容
+                full_text = []
+                for page_num in range(num_pages):
+                    try:
+                        page = pdf_reader.pages[page_num]
+                        page_text = page.extract_text()
+                        if page_text:
+                            full_text.append(page_text)
+                    except Exception as e:
+                        logging.warning(f"提取第 {page_num + 1} 页失败: {e}")
+                        continue
+                
+                # 合并所有页面内容
+                content_text = "\n\n".join(full_text)
+                
+                # 生成标题（使用文件名或PDF元数据）
+                title = Path(file_path).stem
+                if metadata and '/Title' in metadata and metadata['/Title']:
+                    title = metadata['/Title']
+                
+                return {
+                    'title': title,
+                    'content': content_text,
+                    'metadata': {
+                        'content_length': len(content_text),
+                        'file_size': os.path.getsize(file_path),
+                        'file_path': file_path,
+                        'num_pages': num_pages,
+                        'extraction_method': 'PyPDF2',
+                        'pdf_metadata': {
+                            'title': metadata.get('/Title', ''),
+                            'author': metadata.get('/Author', ''),
+                            'subject': metadata.get('/Subject', ''),
+                            'creator': metadata.get('/Creator', ''),
+                            'producer': metadata.get('/Producer', '')
+                        } if metadata else {}
+                    }
+                }
+                
+        except Exception as e:
+            logging.error(f"PDF文本提取失败 {file_path}: {e}")
+            # 降级处理：返回二进制内容
+            with open(file_path, 'rb') as f:
+                content = f.read()
+            return {
+                'title': Path(file_path).stem,
+                'content': f"[PDF内容提取失败: {str(e)}]",
+                'metadata': {
+                    'content_length': len(content),
+                    'file_size': len(content),
+                    'file_path': file_path,
+                    'extraction_method': 'error_fallback',
+                    'error': str(e)
+                }
+            }
         
     def _collect_doc_content(self, file_path: str, collection_config: Dict[str, Any]) -> Dict[str, Any]:
         """

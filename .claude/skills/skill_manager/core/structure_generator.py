@@ -8,7 +8,7 @@ import os
 import shutil
 from pathlib import Path
 from typing import Dict, Any, Optional
-from ..models import StructureConfig, SkillSpec, TemplateConfig
+from models import StructureConfig, SkillSpec, TemplateConfig
 
 
 class StructureGenerator:

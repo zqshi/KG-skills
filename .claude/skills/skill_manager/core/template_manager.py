@@ -8,7 +8,7 @@ import os
 import re
 from pathlib import Path
 from typing import Dict, List, Optional
-from ..models import SkillSpec, TemplateConfig
+from models import SkillSpec, TemplateConfig
 
 
 class TemplateManager:

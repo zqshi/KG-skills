@@ -9,11 +9,12 @@ import sys
 from pathlib import Path
 
 # 添加路径
+sys.path.insert(0, str(Path(__file__).parent))
 sys.path.insert(0, str(Path(__file__).parent / 'core'))
 sys.path.insert(0, str(Path(__file__).parent / 'plugins' / 'workflow_analyzer'))
 
-from skill_creator import SkillCreator
-from analyzer import WorkflowAnalyzer
+from core.skill_creator import SkillCreator
+from plugins.workflow_analyzer.analyzer import WorkflowAnalyzer
 
 
 def main():
